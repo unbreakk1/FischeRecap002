@@ -1,5 +1,6 @@
 package unbreakk1;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 public class OrderMapRepo implements OrderRepo
@@ -32,5 +33,19 @@ public class OrderMapRepo implements OrderRepo
         // Convert map values (the orders) into a list
         return new ArrayList<>(orderMap.values());
     }
+
+    @Override
+    public boolean modifyOrderQuantity(int orderId, int newQuantity, BigDecimal productPrice) {
+        Order existingOrder = orderMap.get(orderId);
+        if (existingOrder == null) {
+            return false; // Order not found
+        }
+
+        // Update the order with the new quantity and total price
+        Order updatedOrder = new Order(existingOrder.id(), existingOrder.productId(), newQuantity, productPrice);
+        orderMap.put(orderId, updatedOrder);
+        return true;
+    }
+
 
 }
