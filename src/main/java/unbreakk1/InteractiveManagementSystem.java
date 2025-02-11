@@ -1,6 +1,7 @@
 package unbreakk1;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
@@ -14,9 +15,8 @@ public class InteractiveManagementSystem
 
     public InteractiveManagementSystem()
     {
-        // Initialize repositories and ShopService
         this.productRepo = new ProductRepo();
-        this.orderRepo = new OrderMapRepo(); // Switch to OrderListRepo if needed.
+        this.orderRepo = new OrderMapRepo();
         this.shopService = new ShopService(productRepo, orderRepo);
         this.eanReader = new EANReader(productRepo);
         this.scanner = new Scanner(System.in);
@@ -47,38 +47,106 @@ public class InteractiveManagementSystem
         }
     }
 
+    private void deleteProduct()
+    {
+        System.out.print(ConsoleColors.YELLOW + "Enter Product ID to delete: " + ConsoleColors.RESET);
+        int productId = getUserChoice();
+
+        boolean removed = productRepo.removeProduct(productId);
+        if (removed)
+            System.out.println(ConsoleColors.GREEN_BOLD + "Product deleted successfully!" + ConsoleColors.RESET);
+        else
+            System.out.println(ConsoleColors.RED_BOLD + "Product not found!" + ConsoleColors.RESET);
+
+    }
+
+    private void viewOrders()
+    {
+        System.out.println(ConsoleColors.YELLOW_BOLD + "Order List:" + ConsoleColors.RESET);
+        List<Order> orders = orderRepo.getAllOrders();
+
+        if (orders.isEmpty())
+            System.out.println(ConsoleColors.RED_BOLD + "No orders found!" + ConsoleColors.RESET);
+        else
+            for (Order order : orders)
+            {
+                System.out.println(ConsoleColors.GREEN + order + ConsoleColors.RESET);
+            }
+
+    }
+
+    private void modifyOrderQuantity()
+    {
+        System.out.print(ConsoleColors.YELLOW + "Enter Order ID to modify: " + ConsoleColors.RESET);
+        int orderId = getUserChoice();
+
+        System.out.print(ConsoleColors.YELLOW + "Enter new quantity: " + ConsoleColors.RESET);
+        while (!scanner.hasNextInt())
+        {
+            System.out.print(ConsoleColors.RED_BOLD + "Please enter a valid quantity: " + ConsoleColors.RESET);
+            scanner.next();
+        }
+        int newQuantity = scanner.nextInt();
+
+        boolean modified = orderRepo.modifyOrderQuantity(orderId, newQuantity);
+        if (modified)
+            System.out.println(ConsoleColors.GREEN_BOLD + "Order quantity updated successfully!" + ConsoleColors.RESET);
+        else
+            System.out.println(ConsoleColors.RED_BOLD + "Order not found!" + ConsoleColors.RESET);
+
+    }
+
+    private void searchProductByEAN()
+    {
+        System.out.print(ConsoleColors.YELLOW + "Enter Product EAN: " + ConsoleColors.RESET);
+        String ean = scanner.next();
+
+        Optional<Product> product = productRepo.getProductByEAN(ean);
+        if (product.isPresent())
+            System.out.println(ConsoleColors.GREEN_BOLD + "Product Found: " + product.get() + ConsoleColors.RESET);
+        else
+            System.out.println(ConsoleColors.RED_BOLD + "No product found with the given EAN!" + ConsoleColors.RESET);
+
+    }
+
+
     private void loadEANDatabase()
     {
         System.out.println(ConsoleColors.YELLOW_BOLD + "Enter the path to your EAN CSV file:" + ConsoleColors.RESET);
         String filePath = scanner.next();
-        eanReader.loadProductsFromCSV(filePath);
+        try {
+            eanReader.loadProductsFromCSV(filePath); // Ensure `eanReader` is properly initialized
+            System.out.println(ConsoleColors.GREEN_BOLD + "EAN database loaded successfully!" + ConsoleColors.RESET);
+        } catch (Exception e)
+        {
+            System.out.println(ConsoleColors.RED_BOLD + "Failed to load EAN database. Please check the file path and format!" + ConsoleColors.RESET);
+        }
     }
 
     private void printMenu()
     {
         System.out.println(ConsoleColors.YELLOW_BOLD + "\nMain Menu:" + ConsoleColors.RESET);
-        System.out.println(ConsoleColors.BLUE + "1. Add Product" + ConsoleColors.RESET);
-        System.out.println(ConsoleColors.BLUE + "2. View All Products" + ConsoleColors.RESET);
-        System.out.println(ConsoleColors.BLUE + "3. Delete Product" + ConsoleColors.RESET);
-        System.out.println(ConsoleColors.BLUE + "4. Place Order" + ConsoleColors.RESET);
-        System.out.println(ConsoleColors.BLUE + "5. View All Orders" + ConsoleColors.RESET);
-        System.out.println(ConsoleColors.BLUE + "6. Modify Order Quantity" + ConsoleColors.RESET);
-        System.out.println(ConsoleColors.BLUE + "7. Search Product by EAN" + ConsoleColors.RESET);
-        System.out.println(ConsoleColors.BLUE + "8. Exit" + ConsoleColors.RESET);
-        System.out.print(ConsoleColors.YELLOW + "Your choice: " + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE_BOLD + "1. Add Product" + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE_BOLD + "2. View All Products" + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE_BOLD + "3. Delete Product" + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE_BOLD + "4. Place Order" + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE_BOLD + "5. View All Orders" + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE_BOLD + "6. Modify Order Quantity" + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE_BOLD + "7. Search Product by EAN" + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE_BOLD + "8. Exit" + ConsoleColors.RESET);
+        System.out.print(ConsoleColors.YELLOW_BOLD + "Your choice: " + ConsoleColors.RESET);
     }
 
     private int getUserChoice()
     {
         while (!scanner.hasNextInt())
         {
-            System.out.print(ConsoleColors.RED + "Please enter a valid number: " + ConsoleColors.RESET);
+            System.out.print(ConsoleColors.RED_BOLD + "Please enter a valid number: " + ConsoleColors.RESET);
             scanner.next();
         }
         return scanner.nextInt();
     }
 
-    // Add Product
     private void addProduct()
     {
         System.out.print(ConsoleColors.YELLOW + "Enter Product Name: " + ConsoleColors.RESET);
@@ -87,99 +155,81 @@ public class InteractiveManagementSystem
         System.out.print(ConsoleColors.YELLOW + "Enter Product Price: " + ConsoleColors.RESET);
         while (!scanner.hasNextBigDecimal())
         {
-            System.out.print(ConsoleColors.RED + "Please enter a valid price: " + ConsoleColors.RESET);
+            System.out.print(ConsoleColors.RED_BOLD + "Please enter a valid price: " + ConsoleColors.RESET);
             scanner.next();
         }
         BigDecimal price = scanner.nextBigDecimal();
 
+        System.out.print(ConsoleColors.YELLOW + "Enter Product Quantity: " + ConsoleColors.RESET);
+        while (!scanner.hasNextInt())
+        {
+            System.out.print(ConsoleColors.RED_BOLD + "Please enter a valid quantity: " + ConsoleColors.RESET);
+            scanner.next();
+        }
+        int quantity = scanner.nextInt();
+
         System.out.print(ConsoleColors.YELLOW + "Enter Product EAN Code: " + ConsoleColors.RESET);
         String ean = scanner.next();
 
-        Product product = new Product(productRepo.getAllProducts().size() + 1, name, price);
+        // Create the product and add it to the repository
+        Product product = new Product(productRepo.getAllProducts().size() + 1, name, price, quantity);
         productRepo.addProduct(product, ean);
 
         System.out.println(ConsoleColors.GREEN_BOLD + "Product added successfully: " + product + ConsoleColors.RESET);
     }
 
-    // View All Products
+
+    private void placeOrder() {
+        System.out.print(ConsoleColors.YELLOW + "Enter Product ID to order: " + ConsoleColors.RESET);
+        int productId = getUserChoice();
+
+        Optional<Product> productOptional = productRepo.getProductById(productId);
+        if (productOptional.isEmpty())
+        {
+            System.out.println(ConsoleColors.RED_BOLD + "Product not found!" + ConsoleColors.RESET);
+            return;
+        }
+
+        Product product = productOptional.get();
+        if (product.quantity() <= 0)
+        {
+            System.out.println(ConsoleColors.RED_BOLD + "Product out of stock! Cannot place order." + ConsoleColors.RESET);
+            return;
+        }
+
+        System.out.print(ConsoleColors.YELLOW + "Enter Quantity to order: " + ConsoleColors.RESET);
+        int quantity = getUserChoice();
+
+        if (product.quantity() < quantity)
+        {
+            System.out.println(ConsoleColors.RED_BOLD + "Not enough stock available. Current stock: " + product.quantity() + ConsoleColors.RESET);
+            return;
+        }
+
+        // Update stock and place order
+        productRepo.updateProductStock(productId, quantity);
+        shopService.placeOrder(productId, quantity);
+
+        System.out.println(ConsoleColors.GREEN_BOLD + "Order placed successfully for " + quantity + " unit(s) of " + product.name() + ConsoleColors.RESET);
+    }
+
     private void viewProducts()
     {
         System.out.println(ConsoleColors.YELLOW_BOLD + "--- All Available Products ---" + ConsoleColors.RESET);
         if (productRepo.getAllProducts().isEmpty())
             System.out.println(ConsoleColors.RED_BOLD + "No products available." + ConsoleColors.RESET);
         else
-            productRepo.getAllProducts().forEach(product -> System.out.println(ConsoleColors.CYAN + product + ConsoleColors.RESET));
-    }
-
-    // Delete Product
-    private void deleteProduct()
-    {
-        System.out.print(ConsoleColors.YELLOW + "Enter Product ID to delete: " + ConsoleColors.RESET);
-        int productId = getUserChoice();
-
-        boolean removed = productRepo.removeProduct(productId);
-        if (removed)
-            System.out.println(ConsoleColors.GREEN_BOLD + "Product deleted successfully." + ConsoleColors.RESET);
-        else
-            System.out.println(ConsoleColors.RED_BOLD + "Product not found." + ConsoleColors.RESET);
-
-    }
-
-    // Place an Order
-    private void placeOrder()
-    {
-        System.out.print(ConsoleColors.YELLOW + "Enter Product ID to order: " + ConsoleColors.RESET);
-        int productId = getUserChoice();
-
-        System.out.print(ConsoleColors.YELLOW + "Enter Quantity to order: " + ConsoleColors.RESET);
-        int quantity = getUserChoice();
-
-        shopService.placeOrder(productId, quantity);
-    }
-
-    // View All Orders
-    private void viewOrders()
-    {
-        System.out.println(ConsoleColors.YELLOW_BOLD + "--- All Orders ---" + ConsoleColors.RESET);
-        if (orderRepo.getAllOrders().isEmpty())
-            System.out.println(ConsoleColors.RED_BOLD + "No orders have been placed." + ConsoleColors.RESET);
-        else
-            orderRepo.getAllOrders().forEach(order -> System.out.println(ConsoleColors.CYAN + order + ConsoleColors.RESET));
-    }
-
-    // Modify Order Quantity
-    private void modifyOrderQuantity()
-    {
-        System.out.print(ConsoleColors.YELLOW + "Enter Order ID to modify: " + ConsoleColors.RESET);
-        int orderId = getUserChoice();
-
-        System.out.print(ConsoleColors.YELLOW + "Enter New Quantity: " + ConsoleColors.RESET);
-        int newQuantity = getUserChoice();
-
-        boolean modified = shopService.modifyOrderQuantity(orderId, newQuantity);
-        if (!modified)
-            System.out.println(ConsoleColors.RED_BOLD + "Failed to modify the order quantity. Please check the Order ID." + ConsoleColors.RESET);
-
-    }
-
-    // Search Product by EAN
-    private void searchProductByEAN()
-    {
-        System.out.print(ConsoleColors.YELLOW + "Enter EAN Code: " + ConsoleColors.RESET);
-        String ean = scanner.next();
-
-        Optional<Product> product = productRepo.getProductByEAN(ean);
-        if (product.isPresent())
-            System.out.println(ConsoleColors.GREEN_BOLD + "Product found: " + ConsoleColors.CYAN + product.get() + ConsoleColors.RESET);
-        else
-            System.out.println(ConsoleColors.RED_BOLD + "No product found with the given EAN." + ConsoleColors.RESET);
+            productRepo.getAllProducts().forEach(product -> System.out.println(
+                    ConsoleColors.CYAN + product +
+                            " | Stock: " + product.quantity() + ConsoleColors.RESET
+            ));
 
     }
 
     private void exitSystem()
     {
         System.out.println(ConsoleColors.GREEN_BOLD + "Exiting the system. Goodbye!" + ConsoleColors.RESET);
-        System.exit(0);
+        System.exit(0); // Terminates the program
     }
-}
 
+}

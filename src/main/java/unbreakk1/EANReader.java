@@ -16,24 +16,21 @@ public class EANReader
 
     public void loadProductsFromCSV(String filePath)
     {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath)))
+        {
             String line;
             boolean isFirstLine = true;
 
             System.out.println("Loading products from CSV file...");
 
-            while ((line = reader.readLine()) != null)
-            {
-                // Skip header row
-                if (isFirstLine)
-                {
+            while ((line = reader.readLine()) != null) {
+                if (isFirstLine) {
                     isFirstLine = false;
                     continue;
                 }
 
-                // Parse product data
                 String[] fields = line.split(",");
-                if (fields.length < 5) {
+                if (fields.length < 6) { // Adjust for the new 'quantity' field
                     System.out.println("Skipping invalid line: " + line);
                     continue;
                 }
@@ -43,19 +40,18 @@ public class EANReader
                 String brand = fields[2];
                 String category = fields[3];
                 BigDecimal price = new BigDecimal(fields[4]);
+                int quantity = Integer.parseInt(fields[5]); // New stock quantity field
 
-                // Generate unique ID for each product
                 int productId = productRepo.getAllProducts().size() + 1;
-                Product product = new Product(productId, productName, price);
+                Product product = new Product(productId, productName, price, quantity);
 
-                // Add product to the ProductRepo
                 productRepo.addProduct(product, ean);
             }
 
             System.out.println("Products loaded successfully!");
-        } catch (IOException e) {
+        } catch (IOException e)
+        {
             System.err.println("An error occurred while reading the CSV file: " + e.getMessage());
         }
     }
 }
-
